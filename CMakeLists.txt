@@ -105,7 +105,10 @@ target_link_libraries(TelegramChatExporter PRIVATE
 )
 
 if(WIN32)
-    target_sources(TelegramChatExporter PRIVATE platform/windows/windows_agent.cpp)
+    target_sources(TelegramChatExporter PRIVATE
+        platform/windows/windows_agent.cpp
+        platform/windows/menu_window.cpp
+    )
 
     # No console is auto-created by Windows for this process, no matter how
     # it's launched (double-click, Task Scheduler, ...) — core/console.cpp
@@ -118,5 +121,5 @@ if(WIN32)
         target_link_options(TelegramChatExporter PRIVATE /ENTRY:mainCRTStartup)
     endif()
 
-    target_link_libraries(TelegramChatExporter PRIVATE Shell32)
+    target_link_libraries(TelegramChatExporter PRIVATE Shell32 Dwmapi UxTheme)
 endif()
