@@ -1,0 +1,7 @@
+.claude
+build-test
+cmake-build-debug
+third_party
+.idea
+config.json
+session/

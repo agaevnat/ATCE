@@ -1,0 +1,12 @@
+{
+  "name": "telegram-chat-exporter",
+  "version": "0.1.0",
+  "dependencies": [
+    "openssl",
+    "zlib",
+    "gperf",
+    "nlohmann-json",
+    "spdlog",
+    "cli11"
+  ]
+}
