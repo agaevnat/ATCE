@@ -87,12 +87,26 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
 
+# Curses (terminal UI): PDCurses on Windows (vcpkg ships it as an
+# "unofficial-" CMake package, since it has no config file of its own),
+# ncurses everywhere else (found via CMake's built-in FindCurses module,
+# which vcpkg's toolchain file points at the vcpkg-installed copy).
+if(WIN32)
+    find_package(unofficial-pdcurses CONFIG REQUIRED)
+else()
+    set(CURSES_NEED_NCURSES TRUE)
+    find_package(Curses REQUIRED)
+endif()
+
 add_executable(TelegramChatExporter
     main.cpp
-    core/tdlib_client.cpp
-    core/auth.cpp
-    core/config.cpp
-    core/console.cpp
+        platform/windows/tray.cpp
+        platform/windows/control_panel.cpp
+        platform/windows/control_panel.h
+        platform/windows/scenes/scene.cpp
+        platform/windows/scenes/scene.h
+        platform/windows/ui/ui.cpp
+        platform/windows/ui/ui.h
 )
 
 target_include_directories(TelegramChatExporter PRIVATE "${CMAKE_SOURCE_DIR}")
@@ -105,21 +119,20 @@ target_link_libraries(TelegramChatExporter PRIVATE
 )
 
 if(WIN32)
-    target_sources(TelegramChatExporter PRIVATE
-        platform/windows/windows_agent.cpp
-        platform/windows/menu_window.cpp
-    )
+    target_sources(TelegramChatExporter PRIVATE platform/windows/tray.cpp)
+    target_link_libraries(TelegramChatExporter PRIVATE unofficial::pdcurses::pdcurses Shell32 Dwmapi)
 
-    # No console is auto-created by Windows for this process, no matter how
-    # it's launched (double-click, Task Scheduler, ...) — core/console.cpp
-    # allocates one on demand only when an interactive prompt is actually
-    # needed. /ENTRY:mainCRTStartup keeps a plain main() working under
+    # No console is auto-created no matter how the app is launched
+    # (double-click, Task Scheduler, ...) — only the tray icon shows up.
+    # /ENTRY:mainCRTStartup keeps a plain main() working under
     # /SUBSYSTEM:WINDOWS (which WIN32_EXECUTABLE sets) instead of requiring
     # WinMain.
     set_target_properties(TelegramChatExporter PROPERTIES WIN32_EXECUTABLE TRUE)
     if(MSVC)
         target_link_options(TelegramChatExporter PRIVATE /ENTRY:mainCRTStartup)
     endif()
-
-    target_link_libraries(TelegramChatExporter PRIVATE Shell32 Dwmapi UxTheme)
+else()
+    target_include_directories(TelegramChatExporter PRIVATE ${CURSES_INCLUDE_DIRS})
+    target_compile_options(TelegramChatExporter PRIVATE ${CURSES_CFLAGS})
+    target_link_libraries(TelegramChatExporter PRIVATE ${CURSES_LIBRARIES})
 endif()
