@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "../control_panel.h"
 
 namespace exporter {
     void UI::setFontSize(const unsigned short size) {
@@ -39,5 +40,31 @@ namespace exporter {
         SetBkMode(hdc, TRANSPARENT);
         SetTextColor(hdc, this->selected ? kColorCyan : this->fontColor);
         TextOutW(hdc, static_cast<int>(this->x), static_cast<int>(this->y), this->text.c_str(), static_cast<int>(this->text.length()));
+    }
+
+
+    void uiOpenExportPage() {
+        exporter::Scene scene;
+
+        exporter::g_controlPanel->scenes.emplace(scene);
+    }
+
+
+    void uiOpenStatusPage() {
+        exporter::Scene scene;
+
+        exporter::g_controlPanel->scenes.emplace(scene);
+    }
+
+
+    void uiOpenSettingsPage() {
+        exporter::Scene scene;
+
+        exporter::g_controlPanel->scenes.emplace(scene);
+    }
+
+
+    void uiClosePanel() {
+        ShowWindow(g_controlPanel->hwnd_, SW_HIDE);
     }
 }

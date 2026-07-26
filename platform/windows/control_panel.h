@@ -17,6 +17,8 @@ namespace exporter {
         void run();
         void close() const;
     };
+
+    extern ControlPanel * g_controlPanel;
 }
 
 #endif //TELEGRAMCHATEXPORTER_CONTROL_PANEL_H

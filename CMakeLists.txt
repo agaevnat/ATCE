@@ -119,7 +119,6 @@ target_link_libraries(TelegramChatExporter PRIVATE
 )
 
 if(WIN32)
-    target_sources(TelegramChatExporter PRIVATE platform/windows/tray.cpp)
     target_link_libraries(TelegramChatExporter PRIVATE unofficial::pdcurses::pdcurses Shell32 Dwmapi)
 
     # No console is auto-created no matter how the app is launched

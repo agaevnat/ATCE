@@ -52,6 +52,12 @@ namespace exporter {
 
         void draw(HDC hdc) const override;
     };
+
+
+    void uiOpenExportPage();
+    void uiOpenSettingsPage();
+    void uiOpenStatusPage();
+    void uiClosePanel();
 }
 
 

@@ -6,7 +6,7 @@
 #define DWMWA_USE_IMMERSIVE_DARK_MODE 20
 #endif
 
-static exporter::ControlPanel * controlPanel = nullptr;
+exporter::ControlPanel * exporter::g_controlPanel = nullptr;
 
 static LRESULT CALLBACK panelProc(HWND hwnd, const UINT msg, const WPARAM wParam, const LPARAM lParam) {
     switch (msg) {
@@ -14,7 +14,7 @@ static LRESULT CALLBACK panelProc(HWND hwnd, const UINT msg, const WPARAM wParam
             ShowWindow(hwnd, SW_HIDE);
             return 0;
         case WM_KEYDOWN: {
-            exporter::Scene & scene = controlPanel->scenes.top();
+            exporter::Scene & scene = exporter::g_controlPanel->scenes.top();
             auto & buttons = scene.uiButtons;
 
             switch (wParam) {
@@ -47,11 +47,11 @@ static LRESULT CALLBACK panelProc(HWND hwnd, const UINT msg, const WPARAM wParam
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
 
-            for (exporter::Label & uiLabel : controlPanel->scenes.top().uiLabels) {
+            for (exporter::Label & uiLabel : exporter::g_controlPanel->scenes.top().uiLabels) {
                 uiLabel.draw(hdc);
             }
 
-            for (exporter::Button & uiButton : controlPanel->scenes.top().uiButtons) {
+            for (exporter::Button & uiButton : exporter::g_controlPanel->scenes.top().uiButtons) {
                 uiButton.draw(hdc);
             }
 
@@ -128,6 +128,11 @@ namespace exporter {
         exp.setFontSize(25);
         status.setFontSize(25);
 
+        close.on_click = uiClosePanel;
+        settings.on_click = uiOpenSettingsPage;
+        exp.on_click = uiOpenExportPage;
+        status.on_click = uiOpenStatusPage;
+
         exp.x = 90;
         exp.y = 110;
         status.x = 90;
@@ -137,16 +142,16 @@ namespace exporter {
         close.x = 90;
         close.y = 350;
 
-        mainMenu.uiButtons[0] = std::move(close);
+        mainMenu.uiButtons[0] = std::move(exp);
         mainMenu.uiButtons[1] = std::move(settings);
         mainMenu.uiButtons[2] = std::move(status);
-        mainMenu.uiButtons[3] = std::move(exp);
+        mainMenu.uiButtons[3] = std::move(close);
 
         ReleaseDC(hwnd_, hdc);
         this->scenes.emplace(std::move(mainMenu));
         this->scenes.top().uiButtons[this->scenes.top().focus].selected = true;
 
-        controlPanel = this;
+        exporter::g_controlPanel = this;
         ShowWindow(hwnd_, SW_SHOW);
         SetForegroundWindow(hwnd_);
         SetFocus(hwnd_);
