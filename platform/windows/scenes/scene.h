@@ -1,21 +1,18 @@
 #ifndef TELEGRAMCHATEXPORTER_SCENE_H
 #define TELEGRAMCHATEXPORTER_SCENE_H
-#include <array>
+#include <list>
+#include <memory>
 #include "../ui/ui.h"
 
 namespace exporter {
-    constexpr unsigned short uiElemNum = 2;
+    constexpr unsigned short uiLabelNum = 1;
+    constexpr unsigned short uiButtonNum = 3;
 
-    class Scene {
-        std::array<UI, uiElemNum> uiElements;
-    };
+    struct Scene {
+        std::list<exporter::Label> uiLabels = {};
+        std::list<exporter::Button> uiButtons = {};
 
-    class MainMenu : public Scene {
-
-    };
-
-    class Settings : public Scene {
-
+        virtual ~Scene() = default;
     };
 }
 

@@ -12,7 +12,7 @@ static const std::array<exporter::TrayMenuItem, exporter::trayMenuOptionNum> * t
 
 
 static void show_context_menu(HWND hwnd) {
-    HMENU menu = CreatePopupMenu();
+    const HMENU menu = CreatePopupMenu();
 
     for (size_t i = 0; i < trayMenuItems->size(); ++i) {
         AppendMenuW(menu, MF_STRING, kFirstMenuCommandId + static_cast<UINT>(i), (*trayMenuItems)[i].label.c_str());
@@ -27,7 +27,7 @@ static void show_context_menu(HWND hwnd) {
 }
 
 
-static LRESULT tray_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+static LRESULT tray_proc(HWND hwnd, const UINT msg, const WPARAM wParam, const LPARAM lParam) {
     switch (msg) {
         case kTrayCallbackMessage:
             if (lParam == WM_RBUTTONUP || lParam == WM_LBUTTONUP) {
@@ -35,8 +35,7 @@ static LRESULT tray_proc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             return 0;
         case WM_COMMAND: {
-            UINT id = LOWORD(wParam);
-            if (trayMenuItems != nullptr && id >= kFirstMenuCommandId && id < kFirstMenuCommandId + trayMenuItems->size()) {
+            if (const UINT id = LOWORD(wParam); trayMenuItems != nullptr && id >= kFirstMenuCommandId && id < kFirstMenuCommandId + trayMenuItems->size()) {
                 (*trayMenuItems)[id - kFirstMenuCommandId].on_click();
             }
             return 0;

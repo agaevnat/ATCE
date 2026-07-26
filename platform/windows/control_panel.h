@@ -1,21 +1,21 @@
 #ifndef TELEGRAMCHATEXPORTER_CONTROL_PANEL_H
 #define TELEGRAMCHATEXPORTER_CONTROL_PANEL_H
 #include <stack>
-#include <windows.h>
+#include <memory>
+
+#include "scenes/scene.h"
 
 
 namespace exporter {
     constexpr size_t winWidth = 600;
     constexpr size_t winHeight = 600;
 
-    class ControlPanel {
-    private:
+    struct ControlPanel {
+        std::stack<Scene> scenes;
         HWND hwnd_ = nullptr;
 
-    public:
         void run();
         void close() const;
-
     };
 }
 

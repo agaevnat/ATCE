@@ -2,18 +2,42 @@
 #define TELEGRAMCHATEXPORTER_UI_H
 #include <string>
 #include <functional>
+#include <windows.h>
 
 namespace exporter {
+    constexpr COLORREF kColorRed   = RGB(255, 0, 0);
+    constexpr COLORREF kColorGreen = RGB(0, 200, 0);
+    constexpr COLORREF kColorWhite = RGB(255, 255, 255);
+    constexpr COLORREF kColorBlack = RGB(0, 0, 0);
+    constexpr COLORREF kColorCyan  = RGB(0, 200, 200);
+
     struct UI {
+        virtual ~UI() = default;
+        virtual void draw(HDC hdc) const;
+
         float x = 0;
         float y = 0;
+        bool bold = false;
+        unsigned short fontSize = 25;
         std::wstring text;
+
+        HFONT hFont = CreateFontW(
+            fontSize,
+            0, 0, 0, bold ? FW_BOLD : FW_NORMAL,
+            FALSE, FALSE, FALSE,
+            DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+            DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE,
+            L"Consolas"
+        );
     };
 
     struct Label : public UI {};
 
     struct Button : public UI {
+        bool selected = false;
         std::function<void()> on_click;
+
+        void draw(HDC hdc) const override;
     };
 }
 
