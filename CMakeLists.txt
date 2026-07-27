@@ -107,6 +107,8 @@ add_executable(TelegramChatExporter
         platform/windows/scenes/scene.h
         platform/windows/ui/ui.cpp
         platform/windows/ui/ui.h
+        platform/client/client.cpp
+        platform/client/client.h
 )
 
 target_include_directories(TelegramChatExporter PRIVATE "${CMAKE_SOURCE_DIR}")

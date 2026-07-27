@@ -16,23 +16,30 @@ static LRESULT CALLBACK panelProc(HWND hwnd, const UINT msg, const WPARAM wParam
         case WM_KEYDOWN: {
             exporter::Scene & scene = exporter::g_controlPanel->scenes.top();
             auto & buttons = scene.uiButtons;
+            auto & it = scene.uiButtonsIterator;
 
             switch (wParam) {
-                case VK_UP:
-                case VK_DOWN: {
-                    buttons[scene.focus].selected = false;
-                    if (wParam == VK_DOWN) {
-                        scene.focus = (scene.focus == 0) ? buttons.size() - 1 : scene.focus - 1;
-                    } else {
-                        scene.focus = (scene.focus + 1) % buttons.size();
+                case VK_UP: {
+                    if (it != buttons.begin()) {
+                        it->selected = false;
+                        it = std::prev(it);
+                        it->selected = true;
+                        InvalidateRect(hwnd, nullptr, TRUE);
                     }
-                    buttons[scene.focus].selected = true;
-                    InvalidateRect(hwnd, nullptr, TRUE);
+                    return 0;
+                }
+                case VK_DOWN: {
+                    if (std::next(it) != buttons.end()) {
+                        it->selected = false;
+                        it = std::next(it);
+                        it->selected = true;
+                        InvalidateRect(hwnd, nullptr, TRUE);
+                    }
                     return 0;
                 }
                 case VK_RETURN: {
-                    if (buttons[scene.focus].on_click) {
-                        buttons[scene.focus].on_click();
+                    if (it->on_click) {
+                        it->on_click();
                     }
                     return 0;
                 }
@@ -76,13 +83,13 @@ namespace exporter {
         RegisterClassW(&wc);
 
         constexpr DWORD style = WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-        hwnd_ = CreateWindowExW(0, className, L"TelegramChatExporter", style, CW_USEDEFAULT, CW_USEDEFAULT, winWidth, winHeight, nullptr, nullptr, wc.hInstance, nullptr);
+        this->hwnd_ = CreateWindowExW(0, className, L"TelegramChatExporter", style, CW_USEDEFAULT, CW_USEDEFAULT, winWidth, winHeight, nullptr, nullptr, wc.hInstance, nullptr);
 
         constexpr BOOL useDarkMode = TRUE;
-        DwmSetWindowAttribute(hwnd_, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
-        SetWindowPos(hwnd_, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
+        DwmSetWindowAttribute(this->hwnd_, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
+        SetWindowPos(this->hwnd_, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
-        HDC hdc = GetDC(hwnd_);
+        HDC hdc = GetDC(this->hwnd_);
 
         exporter::Scene mainMenu;
         exporter::Label title;
@@ -112,10 +119,10 @@ namespace exporter {
         hint.x = 50;
         hint.y = 430;
 
-        mainMenu.uiLabels[0] = std::move(title);
-        mainMenu.uiLabels[1] = std::move(line1);
-        mainMenu.uiLabels[2] = std::move(line2);
-        mainMenu.uiLabels[3] = std::move(hint);
+        mainMenu.uiLabels.emplace_back(std::move(title));
+        mainMenu.uiLabels.emplace_back(std::move(line1));
+        mainMenu.uiLabels.emplace_back(std::move(line2));
+        mainMenu.uiLabels.emplace_back(std::move(hint));
 
         exporter::Button close, settings, exp, status;
         close.text = L"Close";
@@ -142,14 +149,15 @@ namespace exporter {
         close.x = 90;
         close.y = 350;
 
-        mainMenu.uiButtons[0] = std::move(exp);
-        mainMenu.uiButtons[1] = std::move(settings);
-        mainMenu.uiButtons[2] = std::move(status);
-        mainMenu.uiButtons[3] = std::move(close);
+        mainMenu.uiButtons.emplace_back(std::move(exp));
+        mainMenu.uiButtons.emplace_back(std::move(status));
+        mainMenu.uiButtons.emplace_back(std::move(settings));
+        mainMenu.uiButtons.emplace_back(std::move(close));
 
-        ReleaseDC(hwnd_, hdc);
+        ReleaseDC(this->hwnd_, hdc);
         this->scenes.emplace(std::move(mainMenu));
-        this->scenes.top().uiButtons[this->scenes.top().focus].selected = true;
+        this->scenes.top().uiButtonsIterator = this->scenes.top().uiButtons.begin();
+        this->scenes.top().uiButtonsIterator->selected = true;
 
         exporter::g_controlPanel = this;
         ShowWindow(hwnd_, SW_SHOW);
