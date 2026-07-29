@@ -1,4 +1,5 @@
 #include "control_panel.h"
+#include "../client/client.h"
 
 #include <dwmapi.h>
 
@@ -7,12 +8,23 @@
 #endif
 
 exporter::ControlPanel * exporter::g_controlPanel = nullptr;
+constexpr UINT_PTR kStatusRefreshTimerId = 1;
 
 static LRESULT CALLBACK panelProc(HWND hwnd, const UINT msg, const WPARAM wParam, const LPARAM lParam) {
     switch (msg) {
         case WM_CLOSE:
             ShowWindow(hwnd, SW_HIDE);
             return 0;
+        case WM_TIMER: {
+            if (wParam == kStatusRefreshTimerId) {
+                exporter::Scene & scene = exporter::g_controlPanel->scenes.top();
+                if (scene.isStatusScene) {
+                    exporter::refreshStatusScene(scene);
+                    InvalidateRect(hwnd, nullptr, TRUE);
+                }
+            }
+            return 0;
+        }
         case WM_KEYDOWN: {
             exporter::Scene & scene = exporter::g_controlPanel->scenes.top();
             auto & buttons = scene.uiButtons;
@@ -20,7 +32,7 @@ static LRESULT CALLBACK panelProc(HWND hwnd, const UINT msg, const WPARAM wParam
 
             switch (wParam) {
                 case VK_UP: {
-                    if (it != buttons.begin()) {
+                    if (!buttons.empty() && it != buttons.begin()) {
                         it->selected = false;
                         it = std::prev(it);
                         it->selected = true;
@@ -29,7 +41,7 @@ static LRESULT CALLBACK panelProc(HWND hwnd, const UINT msg, const WPARAM wParam
                     return 0;
                 }
                 case VK_DOWN: {
-                    if (std::next(it) != buttons.end()) {
+                    if (!buttons.empty() && std::next(it) != buttons.end()) {
                         it->selected = false;
                         it = std::next(it);
                         it->selected = true;
@@ -38,14 +50,21 @@ static LRESULT CALLBACK panelProc(HWND hwnd, const UINT msg, const WPARAM wParam
                     return 0;
                 }
                 case VK_RETURN: {
-                    if (it->on_click) {
+                    if (!buttons.empty() && it->on_click) {
                         it->on_click();
+                        InvalidateRect(hwnd, nullptr, TRUE);
                     }
                     return 0;
                 }
-                case VK_ESCAPE:
-                    ShowWindow(hwnd, SW_HIDE);
+                case VK_ESCAPE: {
+                    if (exporter::g_controlPanel->scenes.size() > 1) {
+                        exporter::g_controlPanel->scenes.pop();
+                        InvalidateRect(hwnd, nullptr, TRUE);
+                    } else {
+                        ShowWindow(hwnd, SW_HIDE);
+                    }
                     return 0;
+                }
                 default:
                     return 0;
             }
@@ -54,11 +73,17 @@ static LRESULT CALLBACK panelProc(HWND hwnd, const UINT msg, const WPARAM wParam
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
 
-            for (exporter::Label & uiLabel : exporter::g_controlPanel->scenes.top().uiLabels) {
+            exporter::Scene & scene = exporter::g_controlPanel->scenes.top();
+
+            for (const auto & uiShape : scene.uiShapes) {
+                uiShape->draw(hdc);
+            }
+
+            for (exporter::Label & uiLabel : scene.uiLabels) {
                 uiLabel.draw(hdc);
             }
 
-            for (exporter::Button & uiButton : exporter::g_controlPanel->scenes.top().uiButtons) {
+            for (exporter::Button & uiButton : scene.uiButtons) {
                 uiButton.draw(hdc);
             }
 
@@ -124,24 +149,23 @@ namespace exporter {
         mainMenu.uiLabels.emplace_back(std::move(line2));
         mainMenu.uiLabels.emplace_back(std::move(hint));
 
-        exporter::Button close, settings, exp, status;
+        exporter::Button close, settings, status, startStop;
         close.text = L"Close";
         settings.text = L"Settings";
-        exp.text = L"Export";
         status.text = L"Status";
+        startStop.text = exporter::g_client->isAutoExportEnabled() ? L"Stop" : L"Start";
 
         close.setFontSize(25);
         settings.setFontSize(25);
-        exp.setFontSize(25);
         status.setFontSize(25);
+        startStop.setFontSize(25);
 
         close.on_click = uiClosePanel;
         settings.on_click = uiOpenSettingsPage;
-        exp.on_click = uiOpenExportPage;
         status.on_click = uiOpenStatusPage;
 
-        exp.x = 90;
-        exp.y = 110;
+        startStop.x = 90;
+        startStop.y = 110;
         status.x = 90;
         status.y = 190;
         settings.x = 90;
@@ -149,10 +173,21 @@ namespace exporter {
         close.x = 90;
         close.y = 350;
 
-        mainMenu.uiButtons.emplace_back(std::move(exp));
+        mainMenu.uiButtons.emplace_back(std::move(startStop));
         mainMenu.uiButtons.emplace_back(std::move(status));
         mainMenu.uiButtons.emplace_back(std::move(settings));
         mainMenu.uiButtons.emplace_back(std::move(close));
+
+        const auto startStopIt = mainMenu.uiButtons.begin();
+        startStopIt->on_click = [startStopIt]() {
+            if (exporter::g_client->isAutoExportEnabled()) {
+                exporter::g_client->stopAutoExport();
+                startStopIt->text = L"Start";
+            } else {
+                exporter::g_client->startAutoExport();
+                startStopIt->text = L"Stop";
+            }
+        };
 
         ReleaseDC(this->hwnd_, hdc);
         this->scenes.emplace(std::move(mainMenu));
@@ -163,6 +198,8 @@ namespace exporter {
         ShowWindow(hwnd_, SW_SHOW);
         SetForegroundWindow(hwnd_);
         SetFocus(hwnd_);
+
+        SetTimer(this->hwnd_, kStatusRefreshTimerId, 500, nullptr);
     }
 
     void ControlPanel::close() const {

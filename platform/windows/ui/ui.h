@@ -54,7 +54,20 @@ namespace exporter {
     };
 
 
-    void uiOpenExportPage();
+    struct Shape {
+        COLORREF color = kColorWhite;
+
+        virtual ~Shape() = default;
+        virtual void draw(HDC hdc) const = 0;
+    };
+
+    struct Line : public Shape {
+        float x1 = 0, y1 = 0, x2 = 0, y2 = 0;
+
+        void draw(HDC hdc) const override;
+    };
+
+
     void uiOpenSettingsPage();
     void uiOpenStatusPage();
     void uiClosePanel();

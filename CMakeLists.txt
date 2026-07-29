@@ -121,7 +121,7 @@ target_link_libraries(TelegramChatExporter PRIVATE
 )
 
 if(WIN32)
-    target_link_libraries(TelegramChatExporter PRIVATE unofficial::pdcurses::pdcurses Shell32 Dwmapi)
+    target_link_libraries(TelegramChatExporter PRIVATE unofficial::pdcurses::pdcurses Shell32 Dwmapi Ole32)
 
     # No console is auto-created no matter how the app is launched
     # (double-click, Task Scheduler, ...) — only the tray icon shows up.

@@ -37,7 +37,9 @@ int main() {
         return 1;
     }
 
+    exporter::g_client = &client;
     std::thread listenThread(&exporter::client::listen, &client);
+    std::thread autoExportThread(&exporter::client::runAutonomousExport, &client);
 
     exporter::TrayMenu trayMenu;
     exporter::ControlPanel controlPanel;
@@ -51,6 +53,7 @@ int main() {
 
     client.stop();
     listenThread.join();
+    autoExportThread.join();
 
     return exitCode;
 }
