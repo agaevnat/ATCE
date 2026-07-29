@@ -23,6 +23,14 @@ this runs unattended and keeps the archive up to date as your chats change.
 - **Stays out of the way.** No console, no window — just a tray icon, with a keyboard-driven
   control panel when you need it.
 
+## Screenshots
+
+| ![Main menu](images/img.png)             | ![Status](images/img_2.png)                  |
+|------------------------------------------|----------------------------------------------|
+| The control panel, opened from the tray  | Live view of the exporter's progress         |
+| ![Settings](images/img_1.png)            | ![Tray menu](images/img_3.png)               |
+| Export folder and per-media-type filters | The tray icon is the app's only permanent UI |
+
 ## Requirements
 
 - Windows 10 or later
