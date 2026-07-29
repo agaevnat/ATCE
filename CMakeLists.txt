@@ -43,11 +43,36 @@ endif()
 set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT_DIR}/scripts/buildsystems/vcpkg.cmake"
     CACHE STRING "Vcpkg toolchain file")
 
+# Link everything statically so a release is a single self-contained .exe:
+# no OpenSSL/zlib DLLs to ship alongside it and no Visual C++ Redistributable
+# to install. Must be set before project(), since the triplet decides how
+# vcpkg builds the dependencies.
+if(WIN32)
+    set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "vcpkg triplet")
+endif()
+
 # --- Project --------------------------------------------------------------
 project(TelegramChatExporter CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Static CRT, to match the static vcpkg triplet above. Two mechanisms on
+# purpose: CMAKE_MSVC_RUNTIME_LIBRARY covers our own targets, while patching
+# the flags directly covers TDLib — it declares an ancient
+# cmake_minimum_required, so the policy that makes the former work
+# (CMP0091) isn't active inside its subdirectory.
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+    foreach(flag_var
+            CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+            CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO
+            CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+            CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO)
+        string(REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+    endforeach()
+endif()
 
 # --- TDLib (built from source, fetched into third_party/td) ---------------
 include(FetchContent)
@@ -84,19 +109,6 @@ endif()
 
 # --- Dependencies installed by vcpkg ---------------------------------------
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(spdlog CONFIG REQUIRED)
-find_package(CLI11 CONFIG REQUIRED)
-
-# Curses (terminal UI): PDCurses on Windows (vcpkg ships it as an
-# "unofficial-" CMake package, since it has no config file of its own),
-# ncurses everywhere else (found via CMake's built-in FindCurses module,
-# which vcpkg's toolchain file points at the vcpkg-installed copy).
-if(WIN32)
-    find_package(unofficial-pdcurses CONFIG REQUIRED)
-else()
-    set(CURSES_NEED_NCURSES TRUE)
-    find_package(Curses REQUIRED)
-endif()
 
 add_executable(TelegramChatExporter
     main.cpp
@@ -116,12 +128,10 @@ target_include_directories(TelegramChatExporter PRIVATE "${CMAKE_SOURCE_DIR}")
 target_link_libraries(TelegramChatExporter PRIVATE
     Td::TdStatic
     nlohmann_json::nlohmann_json
-    spdlog::spdlog
-    CLI11::CLI11
 )
 
 if(WIN32)
-    target_link_libraries(TelegramChatExporter PRIVATE unofficial::pdcurses::pdcurses Shell32 Dwmapi Ole32)
+    target_link_libraries(TelegramChatExporter PRIVATE Shell32 Dwmapi Ole32)
 
     # No console is auto-created no matter how the app is launched
     # (double-click, Task Scheduler, ...) — only the tray icon shows up.
@@ -132,8 +142,4 @@ if(WIN32)
     if(MSVC)
         target_link_options(TelegramChatExporter PRIVATE /ENTRY:mainCRTStartup)
     endif()
-else()
-    target_include_directories(TelegramChatExporter PRIVATE ${CURSES_INCLUDE_DIRS})
-    target_compile_options(TelegramChatExporter PRIVATE ${CURSES_CFLAGS})
-    target_link_libraries(TelegramChatExporter PRIVATE ${CURSES_LIBRARIES})
 endif()

@@ -213,6 +213,7 @@ namespace exporter {
         const std::pair<const wchar_t *, bool *> toggles[] = {
             {L"Personal Chats",  &config.personalChats},
             {L"Group Chats",     &config.groupChats},
+            {L"Bot Chats",       &config.botChats},
             {L"Photos",          &config.photos},
             {L"Videos",          &config.videos},
             {L"Voices",          &config.voices},
@@ -223,7 +224,7 @@ namespace exporter {
             {L"Stickers",        &config.stickers},
         };
 
-        float toggleY = 240;
+        float toggleY = 232;
         for (const auto & [name, value] : toggles) {
             exporter::Button toggle;
             toggle.text = std::wstring(name) + L": " + (*value ? L"true" : L"false");
@@ -239,7 +240,7 @@ namespace exporter {
                 exporter::saveConfig(exporter::g_client->getConfig(), exporter::appFilePath("config.json"));
             };
 
-            toggleY += 26;
+            toggleY += 24;
         }
 
         exporter::Button mediaSize;

@@ -49,7 +49,7 @@ int main() {
         {L"Terminate", [&trayMenu]{trayMenu.terminate();}}
     }};
 
-    const int exitCode = trayMenu.run(L"TelegramChatExporter", items);
+    const int exitCode = trayMenu.run(L"ATCE", items);
 
     client.stop();
     listenThread.join();

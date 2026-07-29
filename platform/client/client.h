@@ -22,6 +22,7 @@ namespace exporter {
         bool startByDefault = false;
         bool personalChats = true;
         bool groupChats = true;
+        bool botChats = true;
         bool photos = true;
         bool videos = true;
         bool voices = true;
@@ -72,7 +73,10 @@ namespace exporter {
         std::list<AutoUpdate> autoQueue;
         mutable std::mutex autoQueueMutex;
         std::condition_variable autoQueueCv;
-        std::map<long long, int> chatTypeCache;
+        // Bots live in private chats too, so the raw td_api chat type isn't
+        // enough to tell them apart — resolve it once and cache the answer.
+        enum class ChatKind { Personal, Bot, Group };
+        std::map<long long, ChatKind> chatTypeCache;
 
         std::mutex exportFileMutex;
 

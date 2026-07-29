@@ -179,6 +179,7 @@ namespace exporter {
             config.startByDefault = j.value("start_by_default", false);
             config.personalChats = j.value("personal_chats", true);
             config.groupChats = j.value("group_chats", true);
+            config.botChats = j.value("bot_chats", true);
             config.photos = j.value("photos", true);
             config.videos = j.value("videos", true);
             config.voices = j.value("voices", true);
@@ -213,6 +214,7 @@ namespace exporter {
         j["start_by_default"] = config.startByDefault;
         j["personal_chats"] = config.personalChats;
         j["group_chats"] = config.groupChats;
+        j["bot_chats"] = config.botChats;
         j["photos"] = config.photos;
         j["videos"] = config.videos;
         j["voices"] = config.voices;
@@ -372,13 +374,13 @@ namespace exporter {
     }
 
     bool client::isChatTypeEnabled(const long long chatId) {
-        int typeId;
+        ChatKind kind = ChatKind::Group;
         bool haveCached = false;
         {
             std::lock_guard<std::mutex> lock(this->chatCacheMutex);
             const auto cached = this->chatTypeCache.find(chatId);
             if (cached != this->chatTypeCache.end()) {
-                typeId = cached->second;
+                kind = cached->second;
                 haveCached = true;
             }
         }
@@ -393,17 +395,41 @@ namespace exporter {
             }
 
             auto & chat = static_cast<td::td_api::chat &>(*response);
-            typeId = chat.type_->get_id();
+            const auto typeId = chat.type_->get_id();
+
+            if (typeId == td::td_api::chatTypePrivate::ID || typeId == td::td_api::chatTypeSecret::ID) {
+                // A bot conversation is a private chat as well — the only way
+                // to tell is to look up the user on the other side.
+                const auto userId = (typeId == td::td_api::chatTypePrivate::ID)
+                    ? static_cast<td::td_api::chatTypePrivate &>(*chat.type_).user_id_
+                    : static_cast<td::td_api::chatTypeSecret &>(*chat.type_).user_id_;
+
+                kind = ChatKind::Personal;
+
+                const std::uint64_t userQueryId = this->nextQueryId++;
+                this->clientManager->send(this->clientId, userQueryId, td::td_api::make_object<td::td_api::getUser>(userId));
+                auto userResponse = waitForResponse(userQueryId);
+
+                if (userResponse->get_id() == td::td_api::user::ID) {
+                    auto & user = static_cast<td::td_api::user &>(*userResponse);
+                    if (user.type_ && user.type_->get_id() == td::td_api::userTypeBot::ID) {
+                        kind = ChatKind::Bot;
+                    }
+                }
+            } else {
+                kind = ChatKind::Group;
+            }
 
             std::lock_guard<std::mutex> lock(this->chatCacheMutex);
-            this->chatTypeCache[chatId] = typeId;
+            this->chatTypeCache[chatId] = kind;
             this->chatTitleCache[chatId] = chat.title_;
         }
 
-        if (typeId == td::td_api::chatTypePrivate::ID || typeId == td::td_api::chatTypeSecret::ID) {
-            return this->config.personalChats;
+        switch (kind) {
+            case ChatKind::Personal: return this->config.personalChats;
+            case ChatKind::Bot:      return this->config.botChats;
+            default:                 return this->config.groupChats;
         }
-        return this->config.groupChats;
     }
 
     bool client::isMediaTypeEnabled(const nlohmann::json & msgJson) const {

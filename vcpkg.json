@@ -5,16 +5,6 @@
     "openssl",
     "zlib",
     "gperf",
-    "nlohmann-json",
-    "spdlog",
-    "cli11",
-    {
-      "name": "pdcurses",
-      "platform": "windows"
-    },
-    {
-      "name": "ncurses",
-      "platform": "!windows"
-    }
+    "nlohmann-json"
   ]
 }

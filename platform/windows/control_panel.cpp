@@ -98,7 +98,7 @@ static LRESULT CALLBACK panelProc(HWND hwnd, const UINT msg, const WPARAM wParam
 
 namespace exporter {
     void ControlPanel::run() {
-        const wchar_t * className = L"TelegramChatExporterControlPanel";
+        const wchar_t * className = L"ATCE Control Panel";
 
         WNDCLASSW wc{};
         wc.lpfnWndProc = panelProc;
@@ -108,7 +108,7 @@ namespace exporter {
         RegisterClassW(&wc);
 
         constexpr DWORD style = WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX;
-        this->hwnd_ = CreateWindowExW(0, className, L"TelegramChatExporter", style, CW_USEDEFAULT, CW_USEDEFAULT, winWidth, winHeight, nullptr, nullptr, wc.hInstance, nullptr);
+        this->hwnd_ = CreateWindowExW(0, className, L"ATCE", style, CW_USEDEFAULT, CW_USEDEFAULT, winWidth, winHeight, nullptr, nullptr, wc.hInstance, nullptr);
 
         constexpr BOOL useDarkMode = TRUE;
         DwmSetWindowAttribute(this->hwnd_, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
