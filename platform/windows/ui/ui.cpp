@@ -128,16 +128,13 @@ namespace exporter {
             queueLine.setFontSize(18);
             queueLine.x = boxLeft + 20;
             queueLine.y = boxTop + 15 + static_cast<float>(i) * kRowHeight;
-            scene.uiLabels.push_back(std::move(queueLine));
+            scene.uiLabels.emplace_back(std::move(queueLine));
         }
         scene.uiQueueLabelsBegin = std::prev(scene.uiLabels.end(), kQueueSlots);
         scene.uiQueueLabelSlots = kQueueSlots;
-
-        scene.uiLabels.push_back(std::move(progress));
+        scene.uiLabels.emplace_back(std::move(progress));
         scene.uiProgressLabelIt = std::prev(scene.uiLabels.end());
-
         scene.uiLabels.emplace_back(std::move(hint));
-
         scene.uiButtonsIterator = scene.uiButtons.begin();
 
         exporter::g_controlPanel->scenes.emplace(std::move(scene));
@@ -207,7 +204,7 @@ namespace exporter {
             InvalidateRect(exporter::g_controlPanel->hwnd_, nullptr, TRUE);
         };
 
-        scene.uiButtons.push_back(std::move(browse));
+        scene.uiButtons.emplace_back(std::move(browse));
 
         exporter::Config & config = exporter::g_client->getConfig();
         const std::pair<const wchar_t *, bool *> toggles[] = {
@@ -231,7 +228,7 @@ namespace exporter {
             toggle.setFontSize(18);
             toggle.x = 40;
             toggle.y = toggleY;
-            scene.uiButtons.push_back(std::move(toggle));
+            scene.uiButtons.emplace_back(std::move(toggle));
 
             const auto toggleIt = std::prev(scene.uiButtons.end());
             toggleIt->on_click = [toggleIt, name, value]() {
@@ -248,7 +245,7 @@ namespace exporter {
         mediaSize.setFontSize(18);
         mediaSize.x = 40;
         mediaSize.y = toggleY;
-        scene.uiButtons.push_back(std::move(mediaSize));
+        scene.uiButtons.emplace_back(std::move(mediaSize));
 
         const auto mediaSizeIt = std::prev(scene.uiButtons.end());
         mediaSizeIt->on_click = [mediaSizeIt, &config]() {
