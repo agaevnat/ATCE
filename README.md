@@ -54,16 +54,36 @@ cmake --build cmake-build-debug
 
 The first build compiles TDLib from source and takes a while; later builds are fast.
 
-## First run
+## Getting started
 
-On the first launch a console window opens and asks for your `api_id`, `api_hash`, phone
-number, the login code and (if you have one) your two-factor password. After a successful
-login the console closes itself and the app moves to the tray.
+1. **Get your API credentials.** Sign in at [my.telegram.org](https://my.telegram.org) →
+   *API development tools* → create an application. Note the `api_id` and `api_hash`.
 
-> Do not close that console yourself — doing so terminates the whole application.
+2. **Put the executable somewhere writable.** It creates `config.json` and a `session/`
+   folder next to itself, so pick a normal folder — `C:\Program Files` won't work without
+   administrator rights.
 
-Credentials are written to `config.json` and the Telegram session to `session/`, both next
-to the executable, so subsequent launches start straight into the tray with no prompts.
+3. **Run it.** A console window opens. It scrolls a lot of TDLib log output — that is
+   normal, not an error. Answer the prompts as they appear:
+   `api_id` → `api_hash` → phone number in international format (`+79991234567`) → the
+   login code Telegram sends you → your two-factor password, if you have one.
+
+4. **Wait for the console to close.** On success it prints a confirmation and closes itself
+   after 5 seconds. If it is still open after ~10 seconds, just close it manually and start
+   the program again — your login is already saved, so the second launch goes straight to
+   the tray with no prompts.
+
+5. **Choose where to export.** Right-click the tray icon → *Open Control Panel* →
+   **Settings** → **Browse**, and pick a folder. Press `Esc` to go back.
+
+6. **Press Start.** The exporter now archives every new and edited message. Set
+   `"start_by_default": true` in `config.json` if you want it running from launch.
+
+> Closing that console at any point terminates the whole application — which is exactly why
+> it is safe to close if it gets stuck: nothing is left running in the background.
+
+From then on, `config.json` and `session/` next to the executable keep your settings and
+your login, so there is nothing to set up again.
 
 ## Usage
 
